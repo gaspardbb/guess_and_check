@@ -4,6 +4,8 @@ import copy
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.patches as patches
+import warnings
+import time
 
 
 class Node:
@@ -26,6 +28,7 @@ class Node:
 
 
 class GuessAndCheck:
+    """Implementation of the Guess-and-Check procedure. Complexity of fit seems to be : O(n_samples^2 ...)"""
 
     def __init__(self, leaf_size: int, balance_param: float, max_y):
         if leaf_size <= 0 or not isinstance(leaf_size, int):
@@ -52,6 +55,7 @@ class GuessAndCheck:
 
         # Debug
         self.variables_used = dict()
+        self.first_run = True
 
         # To show it
         self.graph = None
@@ -60,6 +64,7 @@ class GuessAndCheck:
         if self.is_fit:
             raise NotImplementedError("Trees should be fitted only once.")
 
+        time_fit_start = time.time()
         self.n_samples, self.n_features = x.shape
         self.trust_border = (2 * 9 * self.m * np.sqrt(
             np.log(self.n_samples) * np.log(self.n_features) / self.k / np.log(1 / (1 - self.alpha))
@@ -72,6 +77,9 @@ class GuessAndCheck:
                              "n_samples) = (%i, %i)" % (self.k, self.n_samples))
         elif self.n_samples != y.shape[0]:
             raise ValueError("X and y do not have the same shape. Found %i, %i" % (self.n_samples, y.shape[0]))
+        if self.k < np.log(self.n_samples) * np.log(self.n_features):
+            warnings.warn("Assumption 2 requires that k grows faster than log(n)*log(d). Found : %4.1f, %4.1f"
+                          % (self.k, np.log(self.n_samples) * np.log(self.n_features)))
 
         self.root = Node(np.arange(self.n_samples))
         self.n_of_nodes += 1
@@ -89,6 +97,17 @@ class GuessAndCheck:
             self.find_splitting_point(cur_node, x, y, split_index)
 
         self.is_fit = True
+        if self.n_of_nodes == 1:
+            self.root.is_leaf = True
+            warnings.warn(
+                "Your tree has only one node, which is the root node. You'll have low variance but high bias.")
+
+        all_split = np.int(np.sum([self.variables_used[k] for k in self.variables_used.keys()]))
+        correct_split = np.int(np.sum([self.variables_used[k] for k in self.variables_used.keys() if k == 0 or k == 1]))
+        print("Tree fitted in %4.1fs!\n"
+              "There are %i nodes\n"
+              "On the %i split made, %i were on variables 0 and 1."
+              % (time.time() - time_fit_start, self.n_of_nodes, all_split, correct_split))
 
     def find_splitting_point(self, node: Node, x: np.ndarray, y: np.ndarray, split_index: int):
         # First we sort the samples increasingly, so as to check easily the alpha and k rules
@@ -116,6 +135,11 @@ class GuessAndCheck:
             if error_theta > best_error:
                 best_error = error_theta
                 best_i = i
+
+        if self.first_run:
+            warnings.warn("First run terminated. Best error found is %3.1E. Barrier is %3.1E. Ratio is %3.1E."
+                          % (best_error, self.trust_border, self.trust_border/best_error), category=RuntimeWarning)
+            self.first_run = False
 
         split_index_is_a_successful_variable = split_index in self.successful_variables
         if split_index_is_a_successful_variable or best_error > self.trust_border:
@@ -184,6 +208,8 @@ class GuessAndCheck:
         return y_pred
 
     def make_graph(self):
+        if self.n_of_nodes == 1:
+            raise ValueError("Can't draw graph on a tree with only one node.")
         G = nx.DiGraph()
         G.add_node(self.root.id, split_index=self.root.split_index, split_value=self.root.split_value)
         to_process = [self.root]
@@ -230,7 +256,6 @@ class GuessAndCheck:
         def depth_search(node, bounding_box, found_leaves):
             if node.is_leaf:
                 found_leaves.append({"leave": node, "bounding_box": bounding_box})
-                print("DEBUG : found leave.")
             else:
                 if node.left_child:
                     new_box = copy.copy(bounding_box)
@@ -263,11 +288,14 @@ class GuessAndCheck:
         if found_leaves is None:
             found_leaves = self.compute_bounding_boxes()
         fig, ax = plt.subplots(1)
-        sns.scatterplot(x=self.x[:, 0], y=self.x[:, 1], ax=ax)
+        if self.n_samples < 5000:
+            sns.scatterplot(x=self.x[:, 0], y=self.x[:, 1], ax=ax)
+        else:
+            warnings.warn("Too many sample points (%1.1E>5000). They were not drawn." % self.n_samples)
         for leaf in found_leaves:
             box = leaf["bounding_box"]
             rect = patches.Rectangle((box["x_min"], box["y_min"]),
-                                     box["x_max"]-box["x_min"], box["y_max"] - box["y_min"],
+                                     box["x_max"] - box["x_min"], box["y_max"] - box["y_min"],
                                      linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
 
