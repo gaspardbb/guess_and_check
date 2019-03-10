@@ -1,6 +1,6 @@
 # Adaptative concentration of Regression Tree
 
-This code is the implementation of the Guess And Check procedure as described in the article of Wager et al.
+This code is the implementation of the Guess And Check procedure as described in the article of Wager et al. in https://arxiv.org/abs/1503.06388.
 
 This procedure is supposed to give theoretical bounds on the prediction of the tree. Even though the result holds at infinity,
 we investigate its use for large samples. 
