@@ -24,7 +24,7 @@ class Node:
         self.right_child = None
 
         # To draw the graph, we need unique id
-        self.id = np.random.randint(1e6)
+        self.id = np.random.randint(np.int(1e6))
 
 
 class GuessAndCheck:
@@ -138,7 +138,7 @@ class GuessAndCheck:
 
         if self.first_run:
             warnings.warn("First run terminated. Best error found is %3.1E. Barrier is %3.1E. Ratio is %3.1E."
-                          % (best_error, self.trust_border, self.trust_border/best_error), category=RuntimeWarning)
+                          % (best_error, self.trust_border, self.trust_border / best_error), category=RuntimeWarning)
             self.first_run = False
 
         split_index_is_a_successful_variable = split_index in self.successful_variables
@@ -210,32 +210,32 @@ class GuessAndCheck:
     def make_graph(self):
         if self.n_of_nodes == 1:
             raise ValueError("Can't draw graph on a tree with only one node.")
-        G = nx.DiGraph()
-        G.add_node(self.root.id, split_index=self.root.split_index, split_value=self.root.split_value)
+        graph = nx.DiGraph()
+        graph.add_node(self.root.id, split_index=self.root.split_index, split_value=self.root.split_value)
         to_process = [self.root]
         while to_process:
             cur_node = to_process.pop()
             if cur_node.left_child.is_leaf:
-                G.add_node(cur_node.left_child.id, size=cur_node.left_child.size)
-                G.add_edge(cur_node.id, cur_node.left_child.id)
+                graph.add_node(cur_node.left_child.id, size=cur_node.left_child.size)
+                graph.add_edge(cur_node.id, cur_node.left_child.id)
             else:
-                G.add_node(cur_node.left_child.id,
-                           split_index=cur_node.left_child.split_index,
-                           split_value=cur_node.left_child.split_value)
-                G.add_edge(cur_node.id, cur_node.left_child.id)
+                graph.add_node(cur_node.left_child.id,
+                               split_index=cur_node.left_child.split_index,
+                               split_value=cur_node.left_child.split_value)
+                graph.add_edge(cur_node.id, cur_node.left_child.id)
                 to_process.append(cur_node.left_child)
 
             if cur_node.right_child.is_leaf:
-                G.add_node(cur_node.right_child.id, size=cur_node.right_child.size)
-                G.add_edge(cur_node.id, cur_node.right_child.id)
+                graph.add_node(cur_node.right_child.id, size=cur_node.right_child.size)
+                graph.add_edge(cur_node.id, cur_node.right_child.id)
             else:
-                G.add_node(cur_node.right_child.id,
-                           split_index=cur_node.right_child.split_index,
-                           split_value=cur_node.right_child.split_value)
-                G.add_edge(cur_node.id, cur_node.right_child.id)
+                graph.add_node(cur_node.right_child.id,
+                               split_index=cur_node.right_child.split_index,
+                               split_value=cur_node.right_child.split_value)
+                graph.add_edge(cur_node.id, cur_node.right_child.id)
                 to_process.append(cur_node.right_child)
 
-        self.graph = G
+        self.graph = graph
 
     def show_graph(self):
         if self.graph is None:
