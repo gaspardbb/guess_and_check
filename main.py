@@ -2,7 +2,7 @@ import numpy as np
 from guess_and_check import GuessAndCheck
 import matplotlib.pyplot as plt
 
-n_samples = 1000
+n_samples = 5000000
 n_total_features = 100
 n_good_features = 2
 
@@ -15,7 +15,7 @@ X = np.random.random(size=(n_samples, n_total_features))
 Y = X[:, 0] + X[:, 1]
 max_y = 2
 
-model = GuessAndCheck(leaf_size=100, balance_param=0.5, max_y=max_y)
+model = GuessAndCheck(leaf_size=500000, balance_param=0.5, max_y=max_y)
 model.fit(X, Y)
 
 if model.n_of_nodes == 1:

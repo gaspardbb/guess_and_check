@@ -20,6 +20,7 @@ class Node:
         self.is_leaf = False
         self.split_index = None
         self.split_value = None
+        self.split_energy = None
         self.left_child = None
         self.right_child = None
 
@@ -154,6 +155,7 @@ class GuessAndCheck:
 
             node.split_index = split_index
             node.split_value = cur_x[cur_x_sorted_indices[best_i]]
+            node.split_energy = best_error
 
             # Now, we take care of the children.
             # We make sure to provide the good list of the indices of all the elements of the minus group
@@ -310,5 +312,5 @@ def compute_squared_error(i, n, y):
     """
     n_minus = i + 1
     n_plus = n - i + 1
-    delta = 1 / n_minus * np.sum(y[:i + 1]) + 1 / n_plus * np.sum(y[i + 1:])
+    delta = 1 / n_minus * np.sum(y[:i + 1]) - 1 / n_plus * np.sum(y[i + 1:])
     return 4 * n_minus * n_plus / (n_minus + n_plus) ** 2 * delta ** 2
